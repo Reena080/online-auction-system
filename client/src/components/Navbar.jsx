@@ -6,7 +6,7 @@ export default function Navbar({ currentView, setView, onLogout }) {
 
   const handleBrandClick = () => {
     if (isAuthenticated) {
-      setView('auction');
+      setView('marketplace');
     } else {
       setView('login');
     }

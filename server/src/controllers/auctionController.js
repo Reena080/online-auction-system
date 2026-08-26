@@ -2,6 +2,16 @@ const auctionService = require('../services/auctionService');
 const { successResponse } = require('../utils/response');
 
 class AuctionController {
+  async getAuctions(req, res, next) {
+    try {
+      const { status, search } = req.query;
+      const auctions = await auctionService.getAuctions({ status, search });
+      return successResponse(res, 200, 'Auctions retrieved successfully.', auctions);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getAuction(req, res, next) {
     try {
       const auctionId = req.params.auctionId || null;
@@ -26,7 +36,14 @@ class AuctionController {
     try {
       const auctionId = req.params.auctionId || null;
       const result = await auctionService.getAuctionResult(auctionId);
-      return successResponse(res, 200, 'Auction result retrieved successfully.', result);
+      const message = result.status === 'ACTIVE'
+        ? 'Auction is still active.'
+        : 'Auction result retrieved successfully.';
+
+      // Strip internal flags if any
+      const { isStillActive, ...data } = result;
+
+      return successResponse(res, 200, message, data);
     } catch (error) {
       next(error);
     }

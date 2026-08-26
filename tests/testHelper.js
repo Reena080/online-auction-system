@@ -28,6 +28,7 @@ async function setupTestEnvironment(customSeedOptions = {}) {
 
   // 2. Setup Redis Mock
   mockRedis = new RedisMock();
+  await mockRedis.flushall();
   setRedisClient(mockRedis);
 
   // 3. Setup MongoDB Mock

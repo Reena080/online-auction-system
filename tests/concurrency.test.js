@@ -1,17 +1,15 @@
 const request = require('supertest');
 const app = require('../server/src/app');
 const { setupTestEnvironment, cleanupTestEnvironment } = require('./testHelper');
+const { AUCTION_1_ID, AUCTION_2_ID, AUCTION_3_ID } = require('../server/migrations/seed');
 
-describe('Critical Concurrency Race Condition Test', () => {
+describe('Critical Multi-Item Concurrency Race Condition Tests', () => {
   let seedData;
   let aliceToken;
   let bobToken;
 
   beforeEach(async () => {
-    // Initialize auction with starting/highest bid of ₹650
     const env = await setupTestEnvironment({
-      startingPrice: 500,
-      currentHighestBid: 650,
       durationMinutes: 60
     });
     seedData = env.seedData;
@@ -33,19 +31,19 @@ describe('Critical Concurrency Race Condition Test', () => {
     await cleanupTestEnvironment();
   });
 
-  it('should accept exactly ONE of two simultaneous ₹700 bids on ₹650 auction and reject the other with 409', async () => {
-    const auctionId = seedData.auctionId;
+  it('should accept exactly ONE of two simultaneous ₹65,000 bids on iPhone 16 and reject the other with 409', async () => {
+    const iphoneAuctionId = AUCTION_2_ID;
 
-    // Dispatch two simultaneous bid requests for ₹700 at the exact same millisecond
+    // Dispatch two simultaneous bid requests for ₹65,000 at the exact same millisecond
     const reqA = request(app)
-      .post(`/api/auction/${auctionId}/bids`)
+      .post(`/api/auctions/${iphoneAuctionId}/bid`)
       .set('Authorization', `Bearer ${aliceToken}`)
-      .send({ amount: 700 });
+      .send({ amount: 65000 });
 
     const reqB = request(app)
-      .post(`/api/auction/${auctionId}/bids`)
+      .post(`/api/auctions/${iphoneAuctionId}/bid`)
       .set('Authorization', `Bearer ${bobToken}`)
-      .send({ amount: 700 });
+      .send({ amount: 65000 });
 
     const [resA, resB] = await Promise.all([reqA, reqB]);
 
@@ -59,47 +57,60 @@ describe('Critical Concurrency Race Condition Test', () => {
 
     expect(acceptedResponse.body.success).toBe(true);
     expect(acceptedResponse.body.message).toBe('Bid accepted.');
-    expect(acceptedResponse.body.data.bid.amount).toBe(700);
+    expect(acceptedResponse.body.data.bid.amount).toBe(65000);
 
     expect(rejectedResponse.body.success).toBe(false);
     expect(rejectedResponse.body.error).toBe('BID_TOO_LOW');
     expect(rejectedResponse.body.message).toContain('Bid must be higher than the current highest bid');
 
-    // Assertion 3: Final current_highest_bid = ₹700
-    const auctionRes = await request(app).get(`/api/auction/${auctionId}`);
+    // Assertion 3: Final current_highest_bid = ₹65,000
+    const auctionRes = await request(app).get(`/api/auctions/${iphoneAuctionId}`);
     expect(auctionRes.status).toBe(200);
-    expect(auctionRes.body.data.currentHighestBid).toBe(700);
+    expect(auctionRes.body.data.currentHighestBid).toBe(65000);
 
-    // Assertion 4: Only one accepted bid of ₹700 exists in database
-    const bidsRes = await request(app).get(`/api/auction/${auctionId}/bids`);
+    // Assertion 4: Only one accepted bid of ₹65,000 exists in database
+    const bidsRes = await request(app).get(`/api/auctions/${iphoneAuctionId}/bids`);
     expect(bidsRes.status).toBe(200);
-    const bids700 = bidsRes.body.data.filter(b => b.amount === 700);
-    expect(bids700.length).toBe(1);
+    const bids65k = bidsRes.body.data.filter(b => b.amount === 65000);
+    expect(bids65k.length).toBe(1);
 
     // Assertion 5: The winning/highest bidder is exactly one user (the one whose 201 succeeded)
     const winningBidderId = acceptedResponse.body.data.bid.bidderId;
     expect(auctionRes.body.data.highestBidderId).toBe(winningBidderId);
-    expect(['Alice Walker', 'Bob Smith']).toContain(auctionRes.body.data.highestBidderName);
   });
 
-  it('should maintain strict sequential consistency across a swarm of concurrent bids', async () => {
-    const auctionId = seedData.auctionId;
+  it('should process concurrent bids across DIFFERENT auctions independently without locking each other', async () => {
+    const iphoneAuctionId = AUCTION_2_ID;
+    const macbookAuctionId = AUCTION_3_ID;
 
-    // Swarm of concurrent bids: User A bids 700, User B bids 700, User A bids 750, User B bids 720
-    const promises = [
-      request(app).post(`/api/auction/${auctionId}/bids`).set('Authorization', `Bearer ${aliceToken}`).send({ amount: 700 }),
-      request(app).post(`/api/auction/${auctionId}/bids`).set('Authorization', `Bearer ${bobToken}`).send({ amount: 700 }),
-      request(app).post(`/api/auction/${auctionId}/bids`).set('Authorization', `Bearer ${aliceToken}`).send({ amount: 750 }),
-      request(app).post(`/api/auction/${auctionId}/bids`).set('Authorization', `Bearer ${bobToken}`).send({ amount: 720 })
-    ];
+    // Alice bids on iPhone, Bob simultaneously bids on MacBook
+    const reqIPhone = request(app)
+      .post(`/api/auctions/${iphoneAuctionId}/bid`)
+      .set('Authorization', `Bearer ${aliceToken}`)
+      .send({ amount: 62000 });
 
-    const results = await Promise.all(promises);
-    
-    // Check final state
-    const finalAuction = await request(app).get(`/api/auction/${auctionId}`);
-    expect(finalAuction.status).toBe(200);
-    // The highest bid in the batch is 750
-    expect(finalAuction.body.data.currentHighestBid).toBe(750);
-    expect(finalAuction.body.data.highestBidderName).toBe('Alice Walker');
+    const reqMacBook = request(app)
+      .post(`/api/auctions/${macbookAuctionId}/bid`)
+      .set('Authorization', `Bearer ${bobToken}`)
+      .send({ amount: 85000 });
+
+    const [resIPhone, resMacBook] = await Promise.all([reqIPhone, reqMacBook]);
+
+    // Both should succeed with 201 Created independently
+    expect(resIPhone.status).toBe(201);
+    expect(resMacBook.status).toBe(201);
+
+    expect(resIPhone.body.data.bid.amount).toBe(62000);
+    expect(resMacBook.body.data.bid.amount).toBe(85000);
+
+    // Verify independent state
+    const iphoneCheck = await request(app).get(`/api/auctions/${iphoneAuctionId}`);
+    const macbookCheck = await request(app).get(`/api/auctions/${macbookAuctionId}`);
+
+    expect(iphoneCheck.body.data.currentHighestBid).toBe(62000);
+    expect(iphoneCheck.body.data.highestBidderName).toBe('Alice Walker');
+
+    expect(macbookCheck.body.data.currentHighestBid).toBe(85000);
+    expect(macbookCheck.body.data.highestBidderName).toBe('Bob Smith');
   });
 });

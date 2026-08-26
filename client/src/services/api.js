@@ -50,12 +50,20 @@ export const api = {
   },
 
   auction: {
-    get: (auctionId) => request(auctionId ? `/auction/${auctionId}` : '/auction'),
-    getStatus: (auctionId) => request(auctionId ? `/auction/${auctionId}/status` : '/auction/status'),
-    placeBid: (auctionId, amount) => request(`/auction/${auctionId}/bids`, {
+    getAll: (params = {}) => {
+      const query = new URLSearchParams();
+      if (params.status) query.append('status', params.status);
+      if (params.search) query.append('search', params.search);
+      const qs = query.toString();
+      return request(`/auctions${qs ? `?${qs}` : ''}`);
+    },
+    get: (auctionId) => request(auctionId ? `/auctions/${auctionId}` : '/auctions'),
+    getStatus: (auctionId) => request(auctionId ? `/auctions/${auctionId}/status` : '/auctions/status'),
+    getResult: (auctionId) => request(`/auctions/${auctionId}/result`),
+    placeBid: (auctionId, amount) => request(`/auctions/${auctionId}/bid`, {
       method: 'POST',
       body: JSON.stringify({ amount })
     }),
-    getBids: (auctionId, page = 1, limit = 20) => request(`/auction/${auctionId}/bids?page=${page}&limit=${limit}`)
+    getBids: (auctionId, page = 1, limit = 20) => request(`/auctions/${auctionId}/bids?page=${page}&limit=${limit}`)
   }
 };
