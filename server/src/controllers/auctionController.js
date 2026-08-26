@@ -48,6 +48,19 @@ class AuctionController {
       next(error);
     }
   }
+
+  async resetAuctions(req, res, next) {
+    try {
+      const { seed } = require('../../migrations/seed');
+      const { getPool } = require('../config/postgres');
+      const pool = getPool();
+      await seed(pool, { startTime: new Date() });
+      const auctions = await auctionService.getAuctions();
+      return successResponse(res, 200, 'Auctions reset successfully with fresh 3-5 minute durations.', auctions);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new AuctionController();

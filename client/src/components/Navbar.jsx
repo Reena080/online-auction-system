@@ -32,6 +32,23 @@ export default function Navbar({ currentView, setView, onLogout }) {
         <div className="nav-actions">
           {isAuthenticated ? (
             <>
+              <button 
+                className="btn btn-secondary btn-sm"
+                onClick={async () => {
+                  try {
+                    const { api } = await import('../services/api');
+                    await api.auction.reset();
+                    window.location.reload();
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                title="Restart fresh 3-5m demo auctions from NOW"
+                id="reset-demo-btn"
+                style={{ fontSize: '0.75rem', borderColor: 'var(--accent-gold)' }}
+              >
+                🔄 Reset Demo (3-5m)
+              </button>
               <div className="user-profile-badge">
                 <span className="user-avatar">{user.name.charAt(0).toUpperCase()}</span>
                 <span>{user.name}</span>

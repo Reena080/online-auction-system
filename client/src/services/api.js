@@ -64,6 +64,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ amount })
     }),
-    getBids: (auctionId, page = 1, limit = 20) => request(`/auctions/${auctionId}/bids?page=${page}&limit=${limit}`)
+    getBids: (auctionId, page = 1, limit = 20) => request(`/auctions/${auctionId}/bids?page=${page}&limit=${limit}`),
+    reset: () => request('/auctions/reset', { method: 'POST' })
   }
 };

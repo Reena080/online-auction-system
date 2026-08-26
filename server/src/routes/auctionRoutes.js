@@ -13,6 +13,14 @@ router.get('/', (req, res, next) => {
   auctionController.getAuctions(req, res, next);
 });
 
+// Reset demo auctions to fresh 3-5m active status
+router.post('/reset', (req, res, next) => {
+  auctionController.resetAuctions(req, res, next);
+});
+router.get('/reset', (req, res, next) => {
+  auctionController.resetAuctions(req, res, next);
+});
+
 // Single active status helper
 router.get('/status', (req, res, next) => {
   auctionController.getAuctionStatus(req, res, next);
