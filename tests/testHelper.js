@@ -1,5 +1,11 @@
-const { newDb } = require('pg-mem');
-const RedisMock = require('ioredis-mock');
+let newDb, RedisMock;
+try {
+  newDb = require('pg-mem').newDb;
+  RedisMock = require('ioredis-mock');
+} catch (e) {
+  newDb = require('../server/node_modules/pg-mem').newDb;
+  RedisMock = require('../server/node_modules/ioredis-mock');
+}
 const { setPool } = require('../server/src/config/postgres');
 const { setRedisClient } = require('../server/src/config/redis');
 const { setAuditCollection, clearInMemoryAuditLogs } = require('../server/src/config/mongo');
