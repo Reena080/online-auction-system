@@ -2,6 +2,7 @@ const auctionRepository = require('../repositories/auctionRepository');
 const { getRedisClient } = require('../config/redis');
 const auditService = require('./auditService');
 const { AppError } = require('../middleware/errorMiddleware');
+const { query } = require('../config/postgres');
 
 const CACHE_TTL_SECONDS = 8; // 5-10s per assignment requirement
 
@@ -10,11 +11,16 @@ class AuctionService {
     return `auction:${auctionId}`;
   }
 
+  getHighestBidCacheKey(auctionId) {
+    return `auction:${auctionId}:highestBid`;
+  }
+
   async invalidateCache(auctionId) {
     try {
       const redis = getRedisClient();
       if (redis) {
         await redis.del(this.getCacheKey(auctionId));
+        await redis.del(this.getHighestBidCacheKey(auctionId));
         await redis.del('auction:current');
       }
     } catch (err) {
@@ -103,7 +109,14 @@ class AuctionService {
           createdAt: auction.createdAt
         });
 
+        const highestBidPayload = JSON.stringify({
+          amount: auction.currentHighestBid,
+          userId: auction.highestBidderId,
+          userName: auction.highestBidderName
+        });
+
         await redis.set(cacheKey, cachePayload, 'EX', CACHE_TTL_SECONDS);
+        await redis.set(this.getHighestBidCacheKey(auction.id), highestBidPayload, 'EX', CACHE_TTL_SECONDS);
         if (auctionId) {
           await redis.set('auction:current', cachePayload, 'EX', CACHE_TTL_SECONDS);
         }
@@ -132,6 +145,57 @@ class AuctionService {
       endTime: auction.endTime,
       timeRemainingSeconds: Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000))
     };
+  }
+
+  async getAuctionResult(auctionId = null) {
+    const auction = await this.getAuction(auctionId);
+    const now = new Date();
+    const endTime = new Date(auction.endTime);
+    const isEnded = auction.status === 'ENDED' || now >= endTime;
+
+    return {
+      id: auction.id,
+      status: isEnded ? 'ENDED' : 'ACTIVE',
+      winner: auction.highestBidderId ? {
+        id: auction.highestBidderId,
+        name: auction.highestBidderName || 'Winner'
+      } : null,
+      winningBid: auction.highestBidderId ? parseFloat(auction.currentHighestBid) : null,
+      endTime: auction.endTime
+    };
+  }
+
+  /**
+   * Background sweeper: finds ACTIVE auctions whose end_time <= NOW() and updates to ENDED
+   */
+  async processExpiredAuctions() {
+    try {
+      const sql = `
+        UPDATE auctions
+        SET status = 'ENDED'
+        WHERE status = 'ACTIVE' AND end_time <= NOW()
+        RETURNING id, current_highest_bid AS "currentHighestBid", highest_bidder_id AS "highestBidderId"
+      `;
+      const result = await query(sql);
+      for (const row of result.rows) {
+        await this.invalidateCache(row.id);
+        auditService.logEvent({
+          event: 'AUCTION_ENDED',
+          auctionId: row.id,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            winningBid: parseFloat(row.currentHighestBid),
+            winnerId: row.highestBidderId
+          }
+        });
+      }
+      return result.rows.length;
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.warn(`[EXPIRED_AUCTION_SWEEPER] Error checking expired auctions: ${err.message}`);
+      }
+      return 0;
+    }
   }
 }
 

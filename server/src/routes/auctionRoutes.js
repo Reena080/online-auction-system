@@ -25,17 +25,25 @@ router.get('/:auctionId/status', (req, res, next) => {
   auctionController.getAuctionStatus(req, res, next);
 });
 
-// Bids on auction
-router.post(
-  '/:auctionId/bids',
+// Auction result & winner endpoint
+router.get('/:auctionId/result', (req, res, next) => {
+  auctionController.getAuctionResult(req, res, next);
+});
+
+// Bids on auction (Supports both /bid and /bids)
+const placeBidHandlers = [
   authenticate,
   bidRateLimiter(),
   validateBody(bidSchema),
   (req, res, next) => {
     bidController.placeBid(req, res, next);
   }
-);
+];
 
+router.post('/:auctionId/bids', ...placeBidHandlers);
+router.post('/:auctionId/bid', ...placeBidHandlers);
+
+// Bid History
 router.get(
   '/:auctionId/bids',
   validateQuery(paginationQuerySchema),

@@ -78,6 +78,20 @@ async function bootstrap() {
     console.log('====================================================');
   });
 
+  // 5. Automatic Auction Expiration Worker (Periodic sweeper)
+  const auctionService = require('./services/auctionService');
+  const expiryInterval = setInterval(async () => {
+    try {
+      const expiredCount = await auctionService.processExpiredAuctions();
+      if (expiredCount > 0) {
+        console.log(`[AUCTION_EXPIRY_WORKER] Automatically marked ${expiredCount} expired auction(s) as ENDED.`);
+      }
+    } catch (err) {
+      // Ignored
+    }
+  }, 5000);
+  expiryInterval.unref();
+
   // Graceful shutdown handlers
   const handleShutdown = async (signal) => {
     console.log(`\n[SERVER] Received ${signal}. Initiating graceful shutdown...`);

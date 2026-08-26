@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.use('/auth', authRoutes);
 router.use('/auction', auctionRoutes);
+router.use('/auctions', auctionRoutes);
 
 // Health check route
 router.get('/health', (req, res) => {

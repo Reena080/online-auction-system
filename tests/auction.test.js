@@ -14,8 +14,8 @@ describe('Auction API Tests', () => {
     await cleanupTestEnvironment();
   });
 
-  describe('GET /api/auction', () => {
-    it('should retrieve the current active auction', async () => {
+  describe('GET /api/auction & /api/auctions', () => {
+    it('should retrieve the current active auction via /api/auction', async () => {
       const res = await request(app).get('/api/auction');
 
       expect(res.status).toBe(200);
@@ -27,8 +27,8 @@ describe('Auction API Tests', () => {
       expect(res.body.data.status).toBe('ACTIVE');
     });
 
-    it('should retrieve a specific auction by ID', async () => {
-      const res = await request(app).get(`/api/auction/${seedData.auctionId}`);
+    it('should retrieve the current active auction via plural /api/auctions', async () => {
+      const res = await request(app).get(`/api/auctions/${seedData.auctionId}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -45,7 +45,7 @@ describe('Auction API Tests', () => {
     });
   });
 
-  describe('GET /api/auction/status', () => {
+  describe('GET /api/auction/status & /api/auctions/:auctionId/result', () => {
     it('should retrieve current auction status and remaining time', async () => {
       const res = await request(app).get('/api/auction/status');
 
@@ -54,6 +54,16 @@ describe('Auction API Tests', () => {
       expect(res.body.data.status).toBe('ACTIVE');
       expect(res.body.data.timeRemainingSeconds).toBeGreaterThan(0);
       expect(res.body.data.currentHighestBid).toBe(500);
+    });
+
+    it('should retrieve auction result via /api/auctions/:auctionId/result', async () => {
+      const res = await request(app).get(`/api/auctions/${seedData.auctionId}/result`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toBeDefined();
+      expect(res.body.data.id).toBe(seedData.auctionId);
+      expect(['ACTIVE', 'ENDED']).toContain(res.body.data.status);
     });
   });
 });

@@ -21,6 +21,16 @@ class AuctionController {
       next(error);
     }
   }
+
+  async getAuctionResult(req, res, next) {
+    try {
+      const auctionId = req.params.auctionId || null;
+      const result = await auctionService.getAuctionResult(auctionId);
+      return successResponse(res, 200, 'Auction result retrieved successfully.', result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new AuctionController();

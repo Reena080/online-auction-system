@@ -111,6 +111,18 @@ class BidService {
 
       // Post-Commit 2: Log Audit Event to MongoDB (Non-blocking)
       auditService.logEvent({
+        event: 'BID_ACCEPTED',
+        auctionId,
+        userId: user.id,
+        amount: bidAmount,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          bidId,
+          bidderName: user.name,
+          previousHighestBid: currentHighest
+        }
+      });
+      auditService.logEvent({
         event: 'BID_PLACED',
         auctionId,
         userId: user.id,
