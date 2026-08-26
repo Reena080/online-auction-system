@@ -15,7 +15,7 @@ export default function LoginPage({ setView }) {
 
     try {
       await login(email, password);
-      setView('auction');
+      setView('marketplace');
     } catch (err) {
       setErrorMsg(err.message || 'Invalid email or password.');
     } finally {
@@ -53,6 +53,7 @@ export default function LoginPage({ setView }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
 
@@ -68,6 +69,7 @@ export default function LoginPage({ setView }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
           </div>
 

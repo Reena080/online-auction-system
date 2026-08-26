@@ -22,7 +22,7 @@ export default function RegisterPage({ setView }) {
 
     try {
       await register(name, email, password);
-      setView('auction');
+      setView('marketplace');
     } catch (err) {
       if (err.errorCode === 'EMAIL_EXISTS') {
         setErrorMsg('An account with this email address already exists. Please login instead.');

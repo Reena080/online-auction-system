@@ -78,7 +78,8 @@ async function seed(clientOrPool = null, options = {}) {
     const users = [
       { id: USER_A_ID, name: 'Alice Walker', email: 'alice@bellcorp.com', password_hash: passwordHash },
       { id: USER_B_ID, name: 'Bob Smith', email: 'bob@bellcorp.com', password_hash: passwordHash },
-      { id: USER_C_ID, name: 'Charlie Brown', email: 'charlie@bellcorp.com', password_hash: passwordHash }
+      { id: USER_C_ID, name: 'Charlie Brown', email: 'charlie@bellcorp.com', password_hash: passwordHash },
+      { id: '44444444-4444-4444-4444-444444444444', name: 'Reena Raju Latukar', email: 'reena@example.com', password_hash: passwordHash }
     ];
 
     for (const u of users) {

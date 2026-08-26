@@ -42,7 +42,7 @@ function MainLayout() {
       <main className="main-content">
         {view === 'login' && <LoginPage setView={setView} />}
         {view === 'register' && <RegisterPage setView={setView} />}
-        {view === 'marketplace' && <AuctionListPage onSelectAuction={handleSelectAuction} />}
+        {(view === 'marketplace' || view === 'auction') && <AuctionListPage onSelectAuction={handleSelectAuction} />}
         {view === 'auction-detail' && (
           <AuctionPage 
             auctionId={selectedAuctionId} 
