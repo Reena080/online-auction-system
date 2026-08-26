@@ -23,11 +23,6 @@ export default function LoginPage({ setView }) {
     }
   };
 
-  const handleQuickLogin = (testEmail, testPassword) => {
-    setEmail(testEmail);
-    setPassword(testPassword);
-  };
-
   return (
     <div className="auth-container">
       <div className="card">
@@ -86,30 +81,6 @@ export default function LoginPage({ setView }) {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="quick-logins">
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', width: '100%' }}>
-            Demo Test Accounts:
-          </span>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            style={{ flex: 1 }}
-            onClick={() => handleQuickLogin('alice@bellcorp.com', 'Password123!')}
-            id="quick-login-alice"
-          >
-            👤 Alice Walker
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            style={{ flex: 1 }}
-            onClick={() => handleQuickLogin('bob@bellcorp.com', 'Password123!')}
-            id="quick-login-bob"
-          >
-            👤 Bob Smith
-          </button>
-        </div>
 
         <div className="auth-footer">
           Don't have an account?{' '}

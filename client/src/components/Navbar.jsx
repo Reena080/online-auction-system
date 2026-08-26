@@ -1,13 +1,30 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Navbar({ currentView, setView }) {
+export default function Navbar({ currentView, setView, onLogout }) {
   const { user, isAuthenticated, logout } = useAuth();
+
+  const handleBrandClick = () => {
+    if (isAuthenticated) {
+      setView('auction');
+    } else {
+      setView('login');
+    }
+  };
+
+  const handleLogoutClick = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      logout();
+      setView('login');
+    }
+  };
 
   return (
     <header className="navbar">
       <div className="navbar-container">
-        <div className="brand-logo" onClick={() => setView('auction')}>
+        <div className="brand-logo" onClick={handleBrandClick}>
           <span>🏛️ Bellcorp Auctions</span>
           <span className="brand-badge">Live</span>
         </div>
@@ -21,7 +38,7 @@ export default function Navbar({ currentView, setView }) {
               </div>
               <button 
                 className="btn btn-secondary btn-sm"
-                onClick={() => logout()}
+                onClick={handleLogoutClick}
                 id="logout-button"
               >
                 Logout

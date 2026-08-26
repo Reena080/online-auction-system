@@ -23,10 +23,10 @@ async function bootstrap() {
   try {
     const pool = getPool();
     const testClient = await pool.connect();
-    console.log('[POSTGRES] Connected successfully to PostgreSQL.');
+    console.log('[POSTGRES] Connected successfully to external PostgreSQL.');
     testClient.release();
 
-    // Auto-run migrations & seed if in dev mode
+    // Auto-run migrations & seed
     try {
       await runMigrations(pool);
       await seed(pool);
@@ -34,7 +34,26 @@ async function bootstrap() {
       console.warn(`[MIGRATION/SEED NOTICE] ${migErr.message}`);
     }
   } catch (pgErr) {
-    console.warn(`[POSTGRES NOTICE] PostgreSQL connection not yet established (${pgErr.message}). Ensure database or docker-compose is running.`);
+    console.log(`[POSTGRES] External database unavailable (${pgErr.message}).`);
+    console.log('[POSTGRES] Initializing built-in database engine with schema and seed data...');
+    try {
+      const { newDb } = require('pg-mem');
+      const { setPool } = require('./config/postgres');
+      const memDb = newDb();
+      memDb.public.registerFunction({
+        name: 'gen_random_uuid',
+        implementation: () => require('uuid').v4()
+      });
+      const pgAdapter = memDb.adapters.createPg();
+      const fallbackPool = new pgAdapter.Pool();
+      setPool(fallbackPool);
+
+      await runMigrations(fallbackPool);
+      await seed(fallbackPool);
+      console.log('[POSTGRES] Built-in database engine is ready and active.');
+    } catch (fallbackErr) {
+      console.error('[POSTGRES ERROR] Failed to initialize fallback engine:', fallbackErr);
+    }
   }
 
   // 2. Initialize Redis
