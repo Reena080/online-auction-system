@@ -26,7 +26,7 @@ class BidRepository {
 
     let bids = [];
     try {
-      // Fetch paginated bids with bidder name
+      // Fetch paginated bids sorted by amount DESC, then created_at DESC (highest bid first)
       const bidsSql = `
         SELECT 
           b.id,
@@ -38,7 +38,7 @@ class BidRepository {
         FROM bids b
         JOIN users u ON b.bidder_id = u.id
         WHERE b.auction_id = $1
-        ORDER BY b.created_at DESC
+        ORDER BY b.amount DESC, b.created_at DESC
         LIMIT $2 OFFSET $3
       `;
       const bidsResult = await query(bidsSql, [auctionId, limit, offset]);
@@ -54,7 +54,7 @@ class BidRepository {
           created_at AS "createdAt"
         FROM bids
         WHERE auction_id = $1
-        ORDER BY created_at DESC
+        ORDER BY amount DESC, created_at DESC
         LIMIT $2 OFFSET $3
       `;
       const bidsResult = await query(bidsSql, [auctionId, limit, offset]);

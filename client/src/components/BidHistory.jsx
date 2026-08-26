@@ -64,6 +64,7 @@ export default function BidHistory({
   };
 
   const totalBids = pagination.total || bids.length || 0;
+  const maxBidAmount = bids.length > 0 ? Math.max(...bids.map(b => parseFloat(b.amount || 0))) : 0;
 
   return (
     <div className="card">
@@ -98,6 +99,7 @@ export default function BidHistory({
                 {bids.map((bid, index) => {
                   const bidderName = bid.bidderName || bid.userName || 'Anonymous Bidder';
                   const amountNum = parseFloat(bid.amount || 0);
+                  const isHighest = amountNum === maxBidAmount && maxBidAmount > 0;
 
                   return (
                     <tr key={bid.id || index}>
@@ -106,17 +108,17 @@ export default function BidHistory({
                           <span className="user-avatar" style={{ width: '22px', height: '22px', fontSize: '0.65rem' }}>
                             {bidderName.charAt(0).toUpperCase()}
                           </span>
-                          <span style={{ fontWeight: index === 0 ? '700' : 'normal', color: index === 0 ? 'var(--accent-gold)' : 'var(--text-primary)' }}>
+                          <span style={{ fontWeight: isHighest ? '700' : 'normal', color: isHighest ? 'var(--accent-gold)' : 'var(--text-primary)' }}>
                             {bidderName}
                           </span>
-                          {(pagination.page === 1 || !pagination.page) && index === 0 && (
+                          {isHighest && (
                             <span style={{ fontSize: '0.65rem', background: 'var(--accent-gold-subtle)', color: 'var(--accent-gold-light)', padding: '0.15rem 0.4rem', borderRadius: '4px', border: '1px solid var(--accent-gold)', fontWeight: 'bold' }}>
                               HIGHEST
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="bid-amount" style={{ fontWeight: '700', color: index === 0 ? 'var(--accent-gold)' : 'var(--text-primary)' }}>
+                      <td className="bid-amount" style={{ fontWeight: '700', color: isHighest ? 'var(--accent-gold)' : 'var(--text-primary)' }}>
                         ₹{amountNum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
