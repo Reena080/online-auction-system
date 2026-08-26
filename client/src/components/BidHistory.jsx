@@ -1,6 +1,57 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { api } from '../services/api';
 
-export default function BidHistory({ bids, pagination, onPageChange, loading }) {
+export default function BidHistory({ 
+  auctionId, 
+  refreshTrigger, 
+  bids: propBids, 
+  pagination: propPagination, 
+  onPageChange: propOnPageChange, 
+  loading: propLoading 
+}) {
+  const [internalBids, setInternalBids] = useState(propBids || []);
+  const [internalPagination, setInternalPagination] = useState(
+    propPagination || { total: 0, page: 1, totalPages: 1, limit: 10 }
+  );
+  const [internalLoading, setInternalLoading] = useState(propLoading !== undefined ? propLoading : !!auctionId);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const fetchBids = useCallback(async (targetPage = 1) => {
+    if (!auctionId) return;
+    try {
+      setInternalLoading(true);
+      const res = await api.auction.getBids(auctionId, targetPage, 10);
+      if (res.success) {
+        setInternalBids(res.data || []);
+        setInternalPagination(
+          res.pagination || { total: (res.data || []).length, page: targetPage, totalPages: 1 }
+        );
+      }
+    } catch (err) {
+      console.warn('[BID_HISTORY] Error fetching bids:', err.message);
+    } finally {
+      setInternalLoading(false);
+    }
+  }, [auctionId]);
+
+  useEffect(() => {
+    if (auctionId) {
+      fetchBids(currentPage);
+    }
+  }, [auctionId, currentPage, refreshTrigger, fetchBids]);
+
+  const bids = propBids || internalBids || [];
+  const pagination = propPagination || internalPagination || { total: bids.length, page: 1, totalPages: 1 };
+  const loading = propLoading !== undefined ? propLoading : internalLoading;
+
+  const handlePageChange = (newPage) => {
+    if (propOnPageChange) {
+      propOnPageChange(newPage);
+    } else {
+      setCurrentPage(newPage);
+    }
+  };
+
   const formatDate = (isoString) => {
     if (!isoString) return '-';
     try {
@@ -12,12 +63,14 @@ export default function BidHistory({ bids, pagination, onPageChange, loading }) 
     }
   };
 
+  const totalBids = pagination.total || bids.length || 0;
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <h3 style={{ fontSize: '1.15rem' }}>📜 Live Bidding Activity</h3>
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+        <h3 style={{ fontSize: '1.15rem', fontWeight: '700', color: 'var(--text-primary)' }}>📜 Live Bidding Activity</h3>
         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          {pagination.total} total {pagination.total === 1 ? 'bid' : 'bids'}
+          {totalBids} total {totalBids === 1 ? 'bid' : 'bids'}
         </span>
       </div>
 
@@ -26,8 +79,9 @@ export default function BidHistory({ bids, pagination, onPageChange, loading }) 
           Loading bid history...
         </div>
       ) : bids.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)' }}>
-          No bids placed yet. Be the first to place a bid!
+        <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)', background: 'var(--bg-input)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-color)' }}>
+          <p style={{ margin: 0, fontSize: '0.9rem' }}>No bids placed yet.</p>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Be the first to place a bid on this item!</p>
         </div>
       ) : (
         <>
@@ -41,48 +95,57 @@ export default function BidHistory({ bids, pagination, onPageChange, loading }) 
                 </tr>
               </thead>
               <tbody>
-                {bids.map((bid, index) => (
-                  <tr key={bid.id || index}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span className="user-avatar" style={{ width: '22px', height: '22px', fontSize: '0.65rem' }}>
-                          {(bid.bidderName || 'B').charAt(0).toUpperCase()}
-                        </span>
-                        <span>{bid.bidderName || 'Anonymous Bidder'}</span>
-                        {pagination.page === 1 && index === 0 && (
-                          <span style={{ fontSize: '0.65rem', background: 'var(--accent-gold-subtle)', color: 'var(--accent-gold-light)', padding: '0.15rem 0.4rem', borderRadius: '4px', border: '1px solid var(--accent-gold)' }}>
-                            HIGHEST
+                {bids.map((bid, index) => {
+                  const bidderName = bid.bidderName || bid.userName || 'Anonymous Bidder';
+                  const amountNum = parseFloat(bid.amount || 0);
+
+                  return (
+                    <tr key={bid.id || index}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="user-avatar" style={{ width: '22px', height: '22px', fontSize: '0.65rem' }}>
+                            {bidderName.charAt(0).toUpperCase()}
                           </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="bid-amount">₹{parseFloat(bid.amount).toLocaleString()}</td>
-                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {formatDate(bid.createdAt)}
-                    </td>
-                  </tr>
-                ))}
+                          <span style={{ fontWeight: index === 0 ? '700' : 'normal', color: index === 0 ? 'var(--accent-gold)' : 'var(--text-primary)' }}>
+                            {bidderName}
+                          </span>
+                          {(pagination.page === 1 || !pagination.page) && index === 0 && (
+                            <span style={{ fontSize: '0.65rem', background: 'var(--accent-gold-subtle)', color: 'var(--accent-gold-light)', padding: '0.15rem 0.4rem', borderRadius: '4px', border: '1px solid var(--accent-gold)', fontWeight: 'bold' }}>
+                              HIGHEST
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="bid-amount" style={{ fontWeight: '700', color: index === 0 ? 'var(--accent-gold)' : 'var(--text-primary)' }}>
+                        ₹{amountNum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {formatDate(bid.createdAt || bid.created_at)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {pagination.totalPages > 1 && (
-            <div className="pagination-controls">
+            <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
               <button
                 className="btn btn-secondary btn-sm"
-                onClick={() => onPageChange(pagination.page - 1)}
-                disabled={pagination.page <= 1}
+                onClick={() => handlePageChange((pagination.page || 1) - 1)}
+                disabled={(pagination.page || 1) <= 1}
                 id="pagination-prev-btn"
               >
                 ← Previous
               </button>
-              <span>
-                Page <strong>{pagination.page}</strong> of <strong>{pagination.totalPages}</strong>
+              <span style={{ fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                Page <strong>{pagination.page || 1}</strong> of <strong>{pagination.totalPages || 1}</strong>
               </span>
               <button
                 className="btn btn-secondary btn-sm"
-                onClick={() => onPageChange(pagination.page + 1)}
-                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => handlePageChange((pagination.page || 1) + 1)}
+                disabled={(pagination.page || 1) >= (pagination.totalPages || 1)}
                 id="pagination-next-btn"
               >
                 Next →

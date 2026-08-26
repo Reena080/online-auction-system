@@ -21,7 +21,7 @@ const DEFAULT_AUCTIONS = [
     description: 'Industry-leading noise cancelling wireless headphones with two processors, 8 microphones, and up to 30 hours battery life.',
     startingPrice: 20000.00,
     currentHighestBid: 20000.00,
-    durationMinutes: 120
+    durationMinutes: 3
   },
   {
     id: AUCTION_2_ID,
@@ -29,7 +29,7 @@ const DEFAULT_AUCTIONS = [
     description: 'Flagship smartphone featuring grade 5 titanium design, A18 Pro chip, 48MP Fusion camera system, and Camera Control.',
     startingPrice: 55000.00,
     currentHighestBid: 55000.00,
-    durationMinutes: 180
+    durationMinutes: 4
   },
   {
     id: AUCTION_3_ID,
@@ -37,7 +37,7 @@ const DEFAULT_AUCTIONS = [
     description: 'Supercharged by Apple M3 chip, Liquid Retina display, 18 hours battery life, MagSafe charging in Midnight finish.',
     startingPrice: 75000.00,
     currentHighestBid: 75000.00,
-    durationMinutes: 240
+    durationMinutes: 5
   },
   {
     id: AUCTION_4_ID,
@@ -45,7 +45,7 @@ const DEFAULT_AUCTIONS = [
     description: 'Next-gen gaming powerhouse with advanced ray tracing, 2TB SSD storage, and PlayStation Spectral Super Resolution (PSSR).',
     startingPrice: 40000.00,
     currentHighestBid: 40000.00,
-    durationMinutes: 300
+    durationMinutes: 3
   },
   {
     id: AUCTION_5_ID,
@@ -53,7 +53,7 @@ const DEFAULT_AUCTIONS = [
     description: 'The ultimate sports and adventure smartwatch with rugged titanium case, precision dual-frequency GPS, and 3000 nits display.',
     startingPrice: 25000.00,
     currentHighestBid: 25000.00,
-    durationMinutes: 360
+    durationMinutes: 4
   },
   {
     id: AUCTION_6_ID,
@@ -61,7 +61,7 @@ const DEFAULT_AUCTIONS = [
     description: 'Rare vintage 1968 timepiece in immaculate condition with original box, papers, and certificate of authenticity.',
     startingPrice: 500.00,
     currentHighestBid: 500.00,
-    durationMinutes: 60
+    durationMinutes: 5
   }
 ];
 
@@ -69,7 +69,7 @@ async function seed(clientOrPool = null, options = {}) {
   const pool = clientOrPool || getPool();
   const client = pool.connect ? await pool.connect() : pool;
   
-  console.log('[SEED] Starting database seeding with multiple auction items...');
+  console.log('[SEED] Starting database seeding with 3-5 minute demo durations...');
   
   try {
     const passwordHash = await bcrypt.hash('Password123!', 10);
@@ -91,7 +91,7 @@ async function seed(clientOrPool = null, options = {}) {
     }
     console.log('[SEED] Users seeded.');
 
-    // 2. Seed Auctions
+    // 2. Seed Auctions with 3-5 minute durations
     const baseStartTime = options.startTime || new Date();
     const targetAuctionId = options.auctionId || AUCTION_1_ID;
 
@@ -123,7 +123,7 @@ async function seed(clientOrPool = null, options = {}) {
       `, [item.id, item.title, item.description, startingPrice, currentHighestBid, null, startTime, endTime, status]);
     }
 
-    console.log(`[SEED] ${DEFAULT_AUCTIONS.length} auctions seeded successfully.`);
+    console.log(`[SEED] ${DEFAULT_AUCTIONS.length} auctions seeded successfully with 3-5 min durations.`);
     
     return {
       auctionId: targetAuctionId,
