@@ -1,12 +1,3 @@
-# 📑 System Design Document: High-Concurrency Online Auction System
-
-**Author**: Senior Full-Stack Software Engineer Candidate  
-**Target Organization**: Bellcorp Studio  
-**Role**: Senior Full-Stack Software Engineer Placement Assessment  
-**Date**: August 2026  
-
----
-
 ## 1. Problem Understanding & Business Requirements
 
 ### 1.1 Problem Statement
