@@ -1,41 +1,41 @@
 const request = require('supertest');
 const app = require('../src/app');
 const { setupTestEnvironment, cleanupTestEnvironment } = require('../../tests/testHelper');
-const { AUCTION_1_ID, AUCTION_2_ID, AUCTION_3_ID } = require('../migrations/seed');
+const { AUCTION_1_ID, AUCTION_2_ID, AUCTION_3_ID, AUCTION_6_ID } = require('../migrations/seed');
 
 async function runConcurrencyDemo() {
   console.log('\n========================================');
   console.log('AUCTION CONCURRENCY TEST (RACE CONDITION)');
   console.log('========================================\n');
 
-  // 1. Setup fresh environment with initial highest bid ₹650
-  const env = await setupTestEnvironment({
-    auctionId: AUCTION_1_ID,
+  // 1. Setup fresh environment with initial highest bid ₹650 on Rolex
+  await setupTestEnvironment({
+    auctionId: AUCTION_6_ID,
     startingPrice: 500,
     currentHighestBid: 650,
     durationMinutes: 60
   });
 
-  // 2. Authenticate User A (Alice) & User B (Bob)
-  const loginA = await request(app).post('/api/auth/login').send({ email: 'alice@bellcorp.com', password: 'Password123!' });
-  const loginB = await request(app).post('/api/auth/login').send({ email: 'bob@bellcorp.com', password: 'Password123!' });
+  // 2. Authenticate Demo Users: Arjun Sharma & Priya Nair
+  const loginA = await request(app).post('/api/auth/login').send({ email: 'arjun.demo@example.com', password: 'Password123!' });
+  const loginB = await request(app).post('/api/auth/login').send({ email: 'priya.demo@example.com', password: 'Password123!' });
   const tokenA = loginA.body.data.token;
   const tokenB = loginB.body.data.token;
 
   console.log('Target Item: Vintage Rolex Submariner 1968');
   console.log('Initial highest bid: ₹650.00\n');
-  console.log('User A (Alice Walker) bidding: ₹700.00');
-  console.log('User B (Bob Smith) bidding:    ₹700.00\n');
+  console.log('User A (Arjun Sharma) bidding: ₹700.00');
+  console.log('User B (Priya Nair) bidding:   ₹700.00\n');
   console.log('Dispatching simultaneous HTTP requests at the exact same millisecond via Promise.all()...\n');
 
   // 3. Dispatch simultaneous requests via Promise.all()
   const reqA = request(app)
-    .post(`/api/auctions/${AUCTION_1_ID}/bid`)
+    .post(`/api/auctions/${AUCTION_6_ID}/bid`)
     .set('Authorization', `Bearer ${tokenA}`)
     .send({ amount: 700 });
 
   const reqB = request(app)
-    .post(`/api/auctions/${AUCTION_1_ID}/bid`)
+    .post(`/api/auctions/${AUCTION_6_ID}/bid`)
     .set('Authorization', `Bearer ${tokenB}`)
     .send({ amount: 700 });
 
@@ -45,15 +45,15 @@ async function runConcurrencyDemo() {
   const resultB = resB.status === 201 ? 'ACCEPTED (201 Created)' : `REJECTED (409 Conflict - ${resB.body.error})`;
 
   console.log('Results:');
-  console.log(`User A: ${resultA}`);
-  console.log(`User B: ${resultB}\n`);
+  console.log(`Arjun Sharma: ${resultA}`);
+  console.log(`Priya Nair:   ${resultB}\n`);
 
   // 4. Verify authoritative database state
-  const auctionCheck = await request(app).get(`/api/auctions/${AUCTION_1_ID}`);
+  const auctionCheck = await request(app).get(`/api/auctions/${AUCTION_6_ID}`);
   const finalHighestBid = auctionCheck.body.data.currentHighestBid;
   const winnerName = auctionCheck.body.data.highestBidderName;
 
-  const bidsCheck = await request(app).get(`/api/auctions/${AUCTION_1_ID}/bids`);
+  const bidsCheck = await request(app).get(`/api/auctions/${AUCTION_6_ID}/bids`);
   const acceptedBidsAt700 = bidsCheck.body.data.filter(b => Number(b.amount) === 700);
 
   console.log(`Final highest bid: ₹${finalHighestBid.toFixed(2)}`);
@@ -75,8 +75,8 @@ async function runConcurrencyDemo() {
   console.log('EXPIRED AUCTION TEST (TIME PROTECTION)');
   console.log('========================================\n');
 
-  const expiredEnv = await setupTestEnvironment({
-    auctionId: AUCTION_1_ID,
+  await setupTestEnvironment({
+    auctionId: AUCTION_6_ID,
     startingPrice: 500,
     currentHighestBid: 650,
     startTime: new Date(Date.now() - 7200000),
@@ -88,14 +88,14 @@ async function runConcurrencyDemo() {
   console.log('Attempting late bid: ₹800.00\n');
 
   const lateBidRes = await request(app)
-    .post(`/api/auctions/${AUCTION_1_ID}/bid`)
+    .post(`/api/auctions/${AUCTION_6_ID}/bid`)
     .set('Authorization', `Bearer ${tokenA}`)
     .send({ amount: 800 });
 
   const lateResult = lateBidRes.status === 201 ? 'ACCEPTED' : `REJECTED (${lateBidRes.status} ${lateBidRes.body.error})`;
   console.log(`Result: ${lateResult}\n`);
 
-  const expiredAuctionCheck = await request(app).get(`/api/auctions/${AUCTION_1_ID}`);
+  const expiredAuctionCheck = await request(app).get(`/api/auctions/${AUCTION_6_ID}`);
   const postExpiryHighestBid = expiredAuctionCheck.body.data.currentHighestBid;
   const postExpiryStatus = expiredAuctionCheck.body.data.status;
 
@@ -116,13 +116,13 @@ async function runConcurrencyDemo() {
 
   await setupTestEnvironment({ durationMinutes: 60 });
 
-  console.log('Item 1 (iPhone 16)   -> User A bidding: ₹60,000');
-  console.log('Item 2 (MacBook Air) -> User B bidding: ₹80,000\n');
+  console.log('Item 1 (iPhone 16)   -> Arjun Sharma bidding: ₹60,000');
+  console.log('Item 2 (MacBook Air) -> Priya Nair bidding:   ₹85,000\n');
   console.log('Dispatching simultaneous bids on DIFFERENT items...\n');
 
   const [resIphone, resMacbook] = await Promise.all([
     request(app).post(`/api/auctions/${AUCTION_2_ID}/bid`).set('Authorization', `Bearer ${tokenA}`).send({ amount: 60000 }),
-    request(app).post(`/api/auctions/${AUCTION_3_ID}/bid`).set('Authorization', `Bearer ${tokenB}`).send({ amount: 80000 })
+    request(app).post(`/api/auctions/${AUCTION_3_ID}/bid`).set('Authorization', `Bearer ${tokenB}`).send({ amount: 85000 })
   ]);
 
   const crossPass1 = resIphone.status === 201 && resMacbook.status === 201;
