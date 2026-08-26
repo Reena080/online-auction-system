@@ -57,14 +57,28 @@ export const api = {
       const qs = query.toString();
       return request(`/auctions${qs ? `?${qs}` : ''}`);
     },
-    get: (auctionId) => request(auctionId ? `/auctions/${auctionId}` : '/auctions'),
-    getStatus: (auctionId) => request(auctionId ? `/auctions/${auctionId}/status` : '/auctions/status'),
-    getResult: (auctionId) => request(`/auctions/${auctionId}/result`),
-    placeBid: (auctionId, amount) => request(`/auctions/${auctionId}/bid`, {
-      method: 'POST',
-      body: JSON.stringify({ amount })
-    }),
-    getBids: (auctionId, page = 1, limit = 20) => request(`/auctions/${auctionId}/bids?page=${page}&limit=${limit}`),
-    reset: () => request('/auctions/reset', { method: 'POST' })
+    get: (auctionId) => request(auctionId ? `/auctions/${auctionId}` : '/auction'),
+    getStatus: (auctionId) => request(auctionId ? `/auctions/${auctionId}/status` : '/auction/status'),
+    getResult: (auctionId) => request(auctionId ? `/auctions/${auctionId}/result` : '/auction/result'),
+    placeBid: (auctionId, amount) => {
+      if (auctionId) {
+        return request(`/auctions/${auctionId}/bid`, {
+          method: 'POST',
+          body: JSON.stringify({ amount })
+        });
+      }
+      return request('/auction/bid', {
+        method: 'POST',
+        body: JSON.stringify({ amount })
+      });
+    },
+    getBids: (auctionId, page = 1, limit = 20) => {
+      if (auctionId) {
+        return request(`/auctions/${auctionId}/bids?page=${page}&limit=${limit}`);
+      }
+      return request(`/auction/bids?page=${page}&limit=${limit}`);
+    },
+    reset: () => request('/auction/reset', { method: 'POST' })
   }
 };
+

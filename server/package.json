@@ -11,6 +11,7 @@
     "test": "jest --runInBand --detectOpenHandles --forceExit",
     "test:concurrency": "jest ../tests/concurrency.test.js --runInBand --detectOpenHandles --forceExit",
     "demo:concurrency": "node scripts/concurrency-demo.js",
+    "verify:concurrency": "node ../scripts/concurrency-verify.js",
     "test:coverage": "jest --runInBand --coverage --detectOpenHandles --forceExit"
   },
   "keywords": [

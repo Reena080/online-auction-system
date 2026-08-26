@@ -5,11 +5,7 @@ export default function Navbar({ currentView, setView, onLogout }) {
   const { user, isAuthenticated, logout } = useAuth();
 
   const handleBrandClick = () => {
-    if (isAuthenticated) {
-      setView('marketplace');
-    } else {
-      setView('login');
-    }
+    setView('auction');
   };
 
   const handleLogoutClick = () => {
@@ -17,7 +13,7 @@ export default function Navbar({ currentView, setView, onLogout }) {
       onLogout();
     } else {
       logout();
-      setView('login');
+      setView('auction');
     }
   };
 

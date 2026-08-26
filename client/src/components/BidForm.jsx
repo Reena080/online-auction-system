@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useCountdown } from '../hooks/useCountdown';
 import { api } from '../services/api';
 
 export default function BidForm({ auction, onBidSuccess, setView }) {
@@ -9,9 +10,10 @@ export default function BidForm({ auction, onBidSuccess, setView }) {
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
-  const currentHighest = parseFloat(auction.currentHighestBid || auction.startingPrice || 0);
+  const timeLeft = useCountdown(auction?.endTime);
+  const currentHighest = parseFloat(auction?.currentHighestBid || auction?.startingPrice || 0);
   const minNextBid = currentHighest + 1;
-  const isAuctionEnded = auction.status === 'ENDED' || (auction.endTime && new Date(auction.endTime) <= new Date());
+  const isAuctionEnded = auction?.status === 'ENDED' || timeLeft.isExpired;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

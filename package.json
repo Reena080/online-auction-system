@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "test": "npm --prefix server test",
+    "test:concurrency": "npm --prefix server run test:concurrency",
+    "verify:concurrency": "node scripts/concurrency-verify.js",
     "test:coverage": "npm --prefix server run test:coverage",
     "start:server": "npm --prefix server start",
     "dev:server": "npm --prefix server run dev",

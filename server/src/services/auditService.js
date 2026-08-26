@@ -18,9 +18,12 @@ class AuditService {
 
       const logDocument = {
         event: eventData.event,
+        status: eventData.status || (eventData.event === 'BID_REJECTED' ? 'REJECTED' : 'ACCEPTED'),
         auctionId: eventData.auctionId || null,
-        userId: eventData.userId || null,
-        amount: eventData.amount !== undefined ? eventData.amount : null,
+        userId: eventData.userId || eventData.user_id || null,
+        user_id: eventData.user_id || eventData.userId || null,
+        amount: eventData.amount !== undefined ? eventData.amount : (eventData.bid_amount !== undefined ? eventData.bid_amount : null),
+        bid_amount: eventData.bid_amount !== undefined ? eventData.bid_amount : (eventData.amount !== undefined ? eventData.amount : null),
         timestamp: eventData.timestamp || new Date().toISOString(),
         metadata: eventData.metadata || {}
       };

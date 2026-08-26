@@ -39,7 +39,8 @@ export default function AuctionPage({ auctionId, setView, onBack }) {
       if (!isBackground) setLoading(true);
       const res = await api.auction.get(auctionId);
       if (res.success && res.data) {
-        setAuction(res.data);
+        const item = Array.isArray(res.data) ? res.data[0] : res.data;
+        setAuction(item);
         setError(null);
       }
     } catch (err) {
@@ -85,13 +86,17 @@ export default function AuctionPage({ auctionId, setView, onBack }) {
   if (error || !auction) {
     return (
       <div style={{ maxWidth: '800px', margin: '2rem auto' }}>
-        <button className="back-btn" onClick={onBack} id="back-to-marketplace-btn">
-          ← Back to All Auctions
-        </button>
         <div className="alert alert-error">
           <span>⚠️</span>
           <span>{error || 'Auction item could not be found.'}</span>
         </div>
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => fetchAuction(false)}
+          style={{ marginTop: '1rem' }}
+        >
+          🔄 Retry
+        </button>
       </div>
     );
   }
@@ -101,11 +106,6 @@ export default function AuctionPage({ auctionId, setView, onBack }) {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Back to Marketplace Navigation */}
-      <button className="back-btn" onClick={onBack} id="back-to-marketplace-btn">
-        ← Back to All Auctions
-      </button>
-
       {/* Item Spotlight Header Card */}
       <div className="card" style={{ marginBottom: '1.75rem', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>

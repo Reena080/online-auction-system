@@ -8,31 +8,19 @@ import RegisterPage from './pages/RegisterPage';
 
 function MainLayout() {
   const { isAuthenticated, loading, logout } = useAuth();
-  const [view, setView] = useState(() => (localStorage.getItem('bellcorp_auction_token') ? 'marketplace' : 'login'));
-  const [selectedAuctionId, setSelectedAuctionId] = useState(null);
+  const [view, setView] = useState('auction');
 
   useEffect(() => {
     if (!loading) {
-      if (!isAuthenticated && view === 'marketplace') {
-        setView('login');
-      } else if (isAuthenticated && (view === 'login' || view === 'register')) {
-        setView('marketplace');
+      if (isAuthenticated && (view === 'login' || view === 'register')) {
+        setView('auction');
       }
     }
   }, [isAuthenticated, loading]);
 
   const handleLogout = () => {
     logout();
-    setView('login');
-  };
-
-  const handleSelectAuction = (auctionId) => {
-    setSelectedAuctionId(auctionId);
-    setView('auction-detail');
-  };
-
-  const handleBackToMarketplace = () => {
-    setView('marketplace');
+    setView('auction');
   };
 
   return (
@@ -42,18 +30,11 @@ function MainLayout() {
       <main className="main-content">
         {view === 'login' && <LoginPage setView={setView} />}
         {view === 'register' && <RegisterPage setView={setView} />}
-        {(view === 'marketplace' || view === 'auction') && <AuctionListPage onSelectAuction={handleSelectAuction} />}
-        {view === 'auction-detail' && (
-          <AuctionPage 
-            auctionId={selectedAuctionId} 
-            setView={setView} 
-            onBack={handleBackToMarketplace} 
-          />
-        )}
+        {view === 'auction' && <AuctionPage setView={setView} />}
       </main>
 
       <footer style={{ borderTop: '1px solid var(--border-color)', padding: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-        <p>Bellcorp Studio Online Auction System · Multi-Item Concurrency Protected by PostgreSQL <code>SELECT ... FOR UPDATE</code></p>
+        <p>Bellcorp Online Auction System · Protected by PostgreSQL <code>SELECT ... FOR UPDATE</code> Row-Level Locking</p>
       </footer>
     </div>
   );
@@ -66,3 +47,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+

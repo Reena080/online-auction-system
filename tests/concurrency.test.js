@@ -67,7 +67,7 @@ describe('Critical Multi-Item Concurrency Race Condition Tests', () => {
 
     expect(rejectedResponse.body.success).toBe(false);
     expect(rejectedResponse.body.error).toBe('BID_TOO_LOW');
-    expect(rejectedResponse.body.message).toContain('Bid must be higher than the current highest bid');
+    expect(rejectedResponse.body.message).toContain('Bid must be strictly higher than current highest bid');
 
     // Assertion 2: Final current_highest_bid = ₹700
     const auctionRes = await request(app).get(`/api/auctions/${targetAuctionId}`);

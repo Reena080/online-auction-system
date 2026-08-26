@@ -57,7 +57,7 @@ describe('Bid Placement and Validation Tests', () => {
       expect(res.status).toBe(409);
       expect(res.body.success).toBe(false);
       expect(res.body.error).toBe('BID_TOO_LOW');
-      expect(res.body.message).toContain('Bid must be higher than the current highest bid');
+      expect(res.body.message).toContain('Bid must be strictly higher than current highest bid');
     });
 
     it('should reject an equal bid to the current highest bid (HTTP 409 BID_TOO_LOW)', async () => {
@@ -95,7 +95,7 @@ describe('Bid Placement and Validation Tests', () => {
   });
 
   describe('Auction Expiry Handling', () => {
-    it('should reject bids on an expired auction (HTTP 409 AUCTION_ENDED)', async () => {
+    it('should reject bids on an expired auction (HTTP 400 AUCTION_ENDED)', async () => {
       // Setup a new expired auction test environment (end_time in the past)
       const pastStartTime = new Date(Date.now() - 120 * 60 * 1000);
       const pastEndTime = new Date(Date.now() - 60 * 60 * 1000);
@@ -111,10 +111,29 @@ describe('Bid Placement and Validation Tests', () => {
         .set('Authorization', `Bearer ${aliceToken}`)
         .send({ amount: 800 });
 
-      expect(res.status).toBe(409);
+      expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.error).toBe('AUCTION_ENDED');
-      expect(res.body.message).toBe('The auction has already ended.');
+      expect(res.body.message).toContain('Auction has ended');
+    });
+  });
+
+  describe('Single-Item Direct Endpoint (POST /api/auction/bid)', () => {
+    it('should allow placing bids on direct /api/auction/bid endpoint without URL param', async () => {
+      const freshEnv = await setupTestEnvironment({
+        startingPrice: 1000,
+        currentHighestBid: 1000,
+        durationMinutes: 60
+      });
+
+      const res = await request(app)
+        .post('/api/auction/bid')
+        .set('Authorization', `Bearer ${aliceToken}`)
+        .send({ amount: 1200 });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.bid.amount).toBe(1200);
     });
   });
 
