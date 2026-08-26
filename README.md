@@ -389,9 +389,4 @@ To scale from single-server to 100,000+ active bidders:
 - **HTTP Security Headers**: `helmet` enabled.
 - **Rate Limiting**: Protects against brute-force bid spamming.
 
----
 
-## 👥 Placement Assessment Candidate Notes
-- Author: Senior Full-Stack Software Engineer Candidate
-- Assessment: 2-Day Placement Assessment for Bellcorp Studio
-- Repository: Fully operational, tested, self-contained codebase.
